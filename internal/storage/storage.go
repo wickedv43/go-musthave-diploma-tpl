@@ -1,19 +1,33 @@
 package storage
 
-import "context"
+import (
+	"context"
+)
 
-type Data struct {
-	UUID        int    `json:"uuid"`
-	ShortURL    string `json:"short_url"`
-	OriginalURL string `json:"original_url"`
-	DeletedFlag bool   `json:"is_deleted"`
+type User struct {
+	Login    string      `json:"login"`
+	Password string      `json:"password"`
+	Balance  UserBalance `json:"balance"`
+	Orders   []Order     `json:"orders"`
+}
+
+type UserBalance struct {
+	Current   int `json:"current"`
+	Withdrawn int `json:"withdrawn"`
+}
+
+// Order status | NEW | PROCESSING | INVALID | PROCESSED
+type Order struct {
+	Number     string `json:"number"`
+	Status     string `json:"status"`
+	Accrual    int    `json:"accrual"`
+	UploadedAt string `json:"uploaded_at"`
 }
 
 type DataKeeper interface {
-	Save(c context.Context, d Data) error
-	Get(c context.Context, s string) (Data, error)
-	GetAll(c context.Context, userID int) ([]Data, error)
-	BatchDelete(short []string) error
+	RegisterUser(context.Context, User) error
+	LoginUser(context.Context, User) error
+	CreateOrder(context.Context, Order) error
 
 	HealthCheck() error
 

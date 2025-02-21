@@ -32,7 +32,17 @@ func NewServer(i do.Injector) (*Server, error) {
 	//middleware
 	s.echo.Use(middleware.Recover())
 
-	//routes
+	//free routes
+	s.echo.POST(`/api/user/register`, s.onRegUser)
+	s.echo.POST(`/api/user/login`, s.onLogin)
+
+	//auth users
+	user := s.echo.Group(`/`, s.authMiddleware)
+	user.POST(`/api/user/orders`, nil)
+	user.GET(`/api/user/orders`, nil)
+	user.GET(`/api/user/balance`, nil)
+	user.POST(`/api/user/balance/withdraw`, nil)
+	user.GET(`/api/user/withdrawals`, nil)
 
 	return s, nil
 }

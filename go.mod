@@ -4,6 +4,7 @@ go 1.22.10
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/labstack/echo/v4 v4.13.3 // indirect
