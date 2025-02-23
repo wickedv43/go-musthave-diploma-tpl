@@ -17,7 +17,7 @@ var (
 
 type Claims struct {
 	jwt.RegisteredClaims
-	Login string `json:"login"`
+	UserID int `json:"login"`
 }
 
 func (s *Server) createJWT(u storage.User) (string, error) {
@@ -25,7 +25,7 @@ func (s *Server) createJWT(u storage.User) (string, error) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 		},
-		Login: u.Login,
+		UserID: u.ID,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -53,34 +53,43 @@ func (s *Server) authorize(c echo.Context, u storage.User) echo.Context {
 	return c
 }
 
-func (s *Server) getLoginFromCookie(cookie *http.Cookie) (string, error) {
+func (s *Server) getUserIDFromCookie(cookie *http.Cookie) (int, error) {
 
 	token, err := jwt.ParseWithClaims(cookie.Value, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return secretKey, nil
 	})
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-		return claims.Login, nil
+		return claims.UserID, nil
 	}
-	return "", errors.Wrapf(err, "get login from cookie %s", cookieName)
+
+	return 0, errors.Wrapf(err, "get login from cookie %s", cookieName)
 }
 
 func (s *Server) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		//get cookie
 		cookie, err := c.Cookie(cookieName)
 		if err != nil {
 			return c.JSON(http.StatusUnauthorized, "unauthorized")
 		}
 
-		login, err := s.getLoginFromCookie(cookie)
+		//check cookie exp_at date
+		if cookie.Expires.Before(time.Now()) {
+			return c.JSON(http.StatusUnauthorized, "unauthorized")
+		}
+
+		//get login? or another param
+		userID, err := s.getUserIDFromCookie(cookie)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, "Getting user from cookie")
 		}
 
-		c.Set("login", login)
+		//set userID into echo context
+		c.Set("userID", userID)
 
 		return next(c)
 	}

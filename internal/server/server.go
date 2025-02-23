@@ -30,19 +30,19 @@ func NewServer(i do.Injector) (*Server, error) {
 	s.logger = do.MustInvoke[*logger.Logger](i).WithField("component", "server")
 
 	//middleware
-	s.echo.Use(middleware.Recover())
+	s.echo.Use(middleware.Recover(), middleware.Gzip())
 
 	//free routes
 	s.echo.POST(`/api/user/register`, s.onRegUser)
 	s.echo.POST(`/api/user/login`, s.onLogin)
 
-	//auth users
+	//authorized users
 	user := s.echo.Group(`/`, s.authMiddleware)
-	user.POST(`/api/user/orders`, nil)
-	user.GET(`/api/user/orders`, nil)
-	user.GET(`/api/user/balance`, nil)
-	user.POST(`/api/user/balance/withdraw`, nil)
-	user.GET(`/api/user/withdrawals`, nil)
+	user.POST(`/api/user/orders`, s.onPostOrders)
+	user.GET(`/api/user/orders`, s.onGetOrders)
+	user.GET(`/api/user/balance`, s.onGetUserBalance)
+	user.POST(`/api/user/balance/withdraw`, s.onProcessPayment)
+	user.GET(`/api/user/withdrawals`, s.GetUserBills)
 
 	return s, nil
 }

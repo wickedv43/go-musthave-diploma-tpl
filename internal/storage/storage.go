@@ -4,11 +4,19 @@ import (
 	"context"
 )
 
+// TODO: userID primary key
 type User struct {
-	Login    string      `json:"login"`
-	Password string      `json:"password"`
-	Balance  UserBalance `json:"balance"`
-	Orders   []Order     `json:"orders"`
+	AuthData
+
+	ID      int         `json:"id"`
+	Balance UserBalance `json:"balance"`
+	Orders  []Order     `json:"orders"`
+	Bills   []Bill      `json:"bills"`
+}
+
+type AuthData struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
 }
 
 type UserBalance struct {
@@ -24,12 +32,26 @@ type Order struct {
 	UploadedAt string `json:"uploaded_at"`
 }
 
+type Bill struct {
+	Order       string `json:"order"`
+	Sum         int    `json:"sum"`
+	ProcessedAt string `json:"processed_at"`
+}
+
+// TODO: postgres sqlc or gorm?
 type DataKeeper interface {
-	RegisterUser(context.Context, User) error
-	LoginUser(context.Context, User) error
+	//user
+	RegisterUser(context.Context, AuthData) (User, error)
+	LoginUser(context.Context, AuthData) (User, error)
+	UserData(context.Context, int) (User, error)
+
+	//order
 	CreateOrder(context.Context, Order) error
 
-	HealthCheck() error
+	//payment
+	ProcessPayment(context.Context, Bill) error
 
+	//di
+	HealthCheck() error
 	Close() error
 }
