@@ -86,8 +86,15 @@ func (s *Server) onPostOrders(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, "Unprocessable Entity")
 	}
 
+	//get userID from cookie
+	userID, err := s.getUserID(c)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, "Server error")
+	}
+
 	order.Number = string(orderNum)
 	order.UploadedAt = time.Now().Format(time.RFC3339)
+	order.UserID = userID
 
 	//create order
 	err = s.storage.CreateOrder(c.Request().Context(), order)

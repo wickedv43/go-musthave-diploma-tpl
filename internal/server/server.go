@@ -29,8 +29,10 @@ func NewServer(i do.Injector) (*Server, error) {
 	s.cfg = do.MustInvoke[*config.Config](i)
 	s.logger = do.MustInvoke[*logger.Logger](i).WithField("component", "server")
 
+	s.storage = do.MustInvoke[*storage.PostgresStorage](i)
+
 	//middleware
-	s.echo.Use(middleware.Recover(), middleware.Gzip())
+	s.echo.Use(middleware.Recover(), middleware.Gzip(), s.logHandler)
 
 	//free routes
 	s.echo.POST(`/api/user/register`, s.onRegUser)
