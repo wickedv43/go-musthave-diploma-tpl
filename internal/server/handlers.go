@@ -13,7 +13,7 @@ import (
 )
 
 func (s *Server) getUserID(c echo.Context) (int, error) {
-	uid := c.Get("UserID")
+	uid := c.Get("userID")
 
 	userID, ok := uid.(int)
 	if !ok {
@@ -34,6 +34,7 @@ func (s *Server) onRegUser(c echo.Context) error {
 	//reg user
 	user, err := s.storage.RegisterUser(c.Request().Context(), aud)
 	if err != nil {
+		s.logger.Infof("reg user: ", aud, err)
 		if errors.Is(err, entities.ErrConflict) {
 			return c.JSON(http.StatusConflict, "login already exists")
 		}
@@ -76,7 +77,7 @@ func (s *Server) onPostOrders(c echo.Context) error {
 
 	orderNum, err := io.ReadAll(body)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, "Server error")
+		return c.JSON(http.StatusInternalServerError, "read order number")
 	}
 
 	//validate orderNum
@@ -89,7 +90,7 @@ func (s *Server) onPostOrders(c echo.Context) error {
 	//get userID from cookie
 	userID, err := s.getUserID(c)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, "Server error")
+		return c.JSON(http.StatusInternalServerError, "get user ID")
 	}
 
 	order.Number = string(orderNum)
@@ -109,7 +110,7 @@ func (s *Server) onPostOrders(c echo.Context) error {
 			return c.JSON(http.StatusOK, "order already exists")
 		}
 		//another problem
-		return c.JSON(http.StatusInternalServerError, "Server error")
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusAccepted, nil)
@@ -156,7 +157,7 @@ func (s *Server) onProcessPayment(c echo.Context) error {
 
 	//parse req
 	if err := c.Bind(&pr); err != nil {
-		return c.JSON(http.StatusBadRequest, "Bad Request")
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	//process payment
@@ -164,14 +165,14 @@ func (s *Server) onProcessPayment(c echo.Context) error {
 	if err != nil {
 		//if bad order num
 		if errors.Is(err, entities.ErrBadOrder) {
-			return c.JSON(http.StatusUnprocessableEntity, "order already loaded")
+			return c.JSON(http.StatusUnprocessableEntity, err.Error())
 		}
 		//if user have not money
 		if errors.Is(err, entities.ErrHaveEnoughMoney) {
-			return c.JSON(http.StatusPaymentRequired, "user have enough money")
+			return c.JSON(http.StatusPaymentRequired, err.Error())
 		}
 
-		return c.JSON(http.StatusInternalServerError, "Server error")
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, nil)

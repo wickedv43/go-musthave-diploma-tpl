@@ -13,6 +13,7 @@ import (
 	"github.com/wickedv43/go-musthave-diploma-tpl/internal/entities"
 	"github.com/wickedv43/go-musthave-diploma-tpl/internal/logger"
 	"github.com/wickedv43/go-musthave-diploma-tpl/internal/storage/db"
+	"github.com/wickedv43/go-musthave-diploma-tpl/internal/util"
 
 	_ "github.com/lib/pq"
 )
@@ -122,7 +123,7 @@ func (s *PostgresStorage) LoginUser(ctx context.Context, au AuthData) (User, err
 	}
 
 	//auth check
-	if au.Password != user.Password && au.Login != user.Login {
+	if au.Password != user.Password || au.Login != user.Login {
 		return User{}, entities.ErrBadLogin
 	}
 
@@ -211,7 +212,7 @@ func (s *PostgresStorage) UserData(ctx context.Context, id int) (User, error) {
 }
 
 func (s *PostgresStorage) CreateOrder(ctx context.Context, order Order) error {
-	uploadedAt, err := time.Parse(order.UploadedAt, time.RFC3339)
+	uploadedAt, err := time.Parse(time.RFC3339, order.UploadedAt)
 	if err != nil {
 		return errors.Wrap(err, "parse uploaded at")
 	}
@@ -235,7 +236,56 @@ func (s *PostgresStorage) CreateOrder(ctx context.Context, order Order) error {
 	return nil
 }
 
-func (s *PostgresStorage) ProcessPayment(_ context.Context, _ Bill) error {
+func (s *PostgresStorage) ProcessPayment(ctx context.Context, bill Bill) error {
+	if !util.LuhnCheck(bill.Order) {
+		return errors.New("bill number incorrect")
+	}
+
+	//process payment with tx
+	tx, err := s.Postgres.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Wrap(err, "begin transaction")
+	}
+
+	queriesWithTX := db.New(tx)
+
+	//get order to get userID
+	order, err := queriesWithTX.GetOrderByNumber(ctx, bill.Order)
+	if err != nil {
+		//mb log?
+		tx.Rollback()
+		return errors.Wrap(err, "get order")
+	}
+
+	//get user with balance
+	user, err := queriesWithTX.GetUserByID(ctx, order.UserID)
+	if err != nil {
+		tx.Rollback()
+		return errors.Wrap(err, "get user")
+	}
+
+	//check
+	if int(user.BalanceCurrent)-bill.Sum < 0 {
+		tx.Rollback()
+		return errors.New("insufficient balance")
+	}
+
+	user.BalanceCurrent -= int32(bill.Sum)
+
+	err = queriesWithTX.UpdateUserBalance(ctx, db.UpdateUserBalanceParams{
+		ID:               user.ID,
+		BalanceCurrent:   user.BalanceCurrent,
+		BalanceWithdrawn: user.BalanceWithdrawn,
+	})
+	if err != nil {
+		tx.Rollback()
+		return errors.Wrap(err, "update user balance")
+	}
+
+	//if all success
+	if err = tx.Commit(); err != nil {
+		return errors.Wrap(err, "commit transaction")
+	}
 
 	return nil
 }
