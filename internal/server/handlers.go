@@ -34,7 +34,7 @@ func (s *Server) onRegUser(c echo.Context) error {
 	//reg user
 	user, err := s.storage.RegisterUser(c.Request().Context(), aud)
 	if err != nil {
-		s.logger.Infof("reg user: ", aud, err)
+		s.logger.Info("reg user: ", aud.Login, err)
 		if errors.Is(err, entities.ErrConflict) {
 			return c.JSON(http.StatusConflict, "login already exists")
 		}

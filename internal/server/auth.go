@@ -77,7 +77,7 @@ func (s *Server) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return c.JSON(http.StatusUnauthorized, "unauthorized")
 		}
 
-		s.logger.Info("got cookie %s", cookieName)
+		s.logger.Infof("got cookie %s", cookieName)
 
 		//check cookie exp_at date
 		if cookie.Expires.After(time.Now()) {
