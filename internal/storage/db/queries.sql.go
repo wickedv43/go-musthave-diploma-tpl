@@ -50,7 +50,7 @@ type CreateOrderParams struct {
 	UserID     int32
 	Status     string
 	Accrual    int32
-	UploadedAt time.Time
+	UploadedAt string
 }
 
 func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order, error) {

@@ -2,16 +2,12 @@
 
 package db
 
-import (
-	"time"
-)
-
 type Bill struct {
 	ID          int32
 	OrderNumber string
 	UserID      int32
 	Sum         int32
-	ProcessedAt time.Time
+	ProcessedAt string
 }
 
 type Order struct {
@@ -19,7 +15,7 @@ type Order struct {
 	UserID     int32
 	Status     string
 	Accrual    int32
-	UploadedAt time.Time
+	UploadedAt string
 }
 
 type User struct {

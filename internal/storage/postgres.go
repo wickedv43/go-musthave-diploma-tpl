@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"os"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/samber/do/v2"
@@ -192,7 +191,7 @@ func (s *PostgresStorage) UserData(ctx context.Context, id int) (User, error) {
 			Number:     order.Number,
 			Status:     order.Status,
 			Accrual:    int(order.Accrual),
-			UploadedAt: order.UploadedAt.String(),
+			UploadedAt: order.UploadedAt,
 		})
 	}
 
@@ -212,17 +211,12 @@ func (s *PostgresStorage) UserData(ctx context.Context, id int) (User, error) {
 }
 
 func (s *PostgresStorage) CreateOrder(ctx context.Context, order Order) error {
-	uploadedAt, err := time.Parse(time.RFC3339, order.UploadedAt)
-	if err != nil {
-		return errors.Wrap(err, "parse uploaded at")
-	}
-
-	_, err = s.Queries.CreateOrder(ctx, db.CreateOrderParams{
+	_, err := s.Queries.CreateOrder(ctx, db.CreateOrderParams{
 		Number:     order.Number,
 		UserID:     int32(order.UserID),
 		Status:     "NEW",
 		Accrual:    int32(order.Accrual),
-		UploadedAt: uploadedAt,
+		UploadedAt: order.UploadedAt,
 	})
 	if err != nil {
 		//TODO: order number errors?
