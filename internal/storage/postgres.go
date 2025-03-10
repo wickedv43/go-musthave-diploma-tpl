@@ -37,7 +37,7 @@ func NewPostgresStorage(i do.Injector) (*PostgresStorage, error) {
 	storage.log = log
 	storage.cfg = cfg
 
-	pgDB, err := sql.Open("postgres", storage.cfg.Database.DSN)
+	pgDB, err := sql.Open("postgres", storage.cfg.Database.URI)
 	if err != nil {
 		return nil, errors.Wrap(err, "connect to postgres")
 	}
