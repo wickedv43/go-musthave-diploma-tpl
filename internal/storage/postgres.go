@@ -122,7 +122,7 @@ func (s *PostgresStorage) LoginUser(ctx context.Context, au AuthData) (User, err
 	}
 
 	//auth check
-	if au.Password != user.Password || au.Login != user.Login {
+	if au.Password != user.Password && au.Login == user.Login {
 		return User{}, entities.ErrBadLogin
 	}
 
@@ -171,7 +171,7 @@ func (s *PostgresStorage) UserData(ctx context.Context, id int) (User, error) {
 		bills = append(bills, Bill{
 			Order:       bill.OrderNumber,
 			Sum:         int(bill.Sum),
-			ProcessedAt: bill.ProcessedAt.String(),
+			ProcessedAt: bill.ProcessedAt,
 		})
 	}
 
