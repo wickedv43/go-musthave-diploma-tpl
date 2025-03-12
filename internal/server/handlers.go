@@ -34,7 +34,7 @@ func (s *Server) onRegister(c echo.Context) error {
 	//reg user
 	user, err := s.storage.RegisterUser(c.Request().Context(), aud)
 	if err != nil {
-		s.logger.Info("reg user: ", aud.Login, err)
+		s.logger.WithField("user", aud.Login).Error(err)
 		if errors.Is(err, entities.ErrConflict) {
 			return c.JSON(http.StatusConflict, "login already exists")
 		}
@@ -98,10 +98,12 @@ func (s *Server) onPostOrders(c echo.Context) error {
 	order.UserID = userID
 
 	//send order to accrual system
-	order, err = s.checkOrder(order)
+	s.logger.Info("[BEFORE]", order)
+	err = s.checkOrder(&order)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
+	s.logger.Info("[AFTER]", order)
 
 	//create order
 	err = s.storage.CreateOrder(c.Request().Context(), order)

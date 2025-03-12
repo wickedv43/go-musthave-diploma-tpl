@@ -33,7 +33,6 @@ func (s *Server) createJWT(u storage.User) (string, error) {
 	return token.SignedString(secretKey)
 }
 
-// TODO: check it
 func (s *Server) authorize(c echo.Context, u storage.User) echo.Context {
 	jwtToken, err := s.createJWT(u)
 	if err != nil {
@@ -76,8 +75,6 @@ func (s *Server) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		if err != nil {
 			return c.JSON(http.StatusUnauthorized, "unauthorized")
 		}
-
-		s.logger.Infof("got cookie %s", cookieName)
 
 		//check cookie exp_at date
 		if cookie.Expires.After(time.Now()) {
