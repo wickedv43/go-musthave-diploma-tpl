@@ -9,7 +9,6 @@ import (
 )
 
 func (s *Server) checkOrder(order storage.Order) (storage.Order, error) {
-
 	url := fmt.Sprintf("%s/api/orders/%s", s.cfg.AccrualSystem.URL, order.Number)
 
 	resp, err := s.client.R().Get(url)

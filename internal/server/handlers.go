@@ -99,7 +99,7 @@ func (s *Server) onPostOrders(c echo.Context) error {
 
 	//send order to accrual system
 	s.logger.Info("[BEFORE]", order)
-	err = s.checkOrder(&order)
+	order, err = s.checkOrder(order)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
