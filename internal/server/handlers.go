@@ -93,9 +93,9 @@ func (s *Server) onPostOrders(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, "get user ID")
 	}
 
+	order.UserID = userID
 	order.Number = string(orderNum)
 	order.UploadedAt = time.Now().Format(time.RFC3339)
-	order.UserID = userID
 
 	//send order to accrual system
 	s.logger.Info("[BEFORE]", order)

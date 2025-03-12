@@ -17,11 +17,11 @@ func (s *Server) checkOrder(order storage.Order) (storage.Order, error) {
 	}
 	s.logger.Info("[ACCRUAL RESPONSE] ", resp.Status())
 
-	var acOrder storage.Order
+	var acOrder *storage.Order
 
 	err = json.Unmarshal(resp.Body(), &acOrder)
 	if err != nil {
-		return order, errors.Wrapf(err, "failed to unmarshal order %s", order.Number)
+		return storage.Order{}, errors.Wrapf(err, "failed to unmarshal order %s", order.Number)
 	}
 
 	order.Accrual = acOrder.Accrual
