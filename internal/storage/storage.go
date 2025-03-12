@@ -25,11 +25,11 @@ type UserBalance struct {
 
 // Order status | REGISTERED | PROCESSING | INVALID | PROCESSED
 type Order struct {
-	UserID     int    `json:"-"`
-	Number     string `json:"number"`
-	Status     string `json:"status"`
-	Accrual    int    `json:"accrual,omitempty"`
-	UploadedAt string `json:"uploaded_at"`
+	UserID     int     `json:"-"`
+	Number     string  `json:"number"`
+	Status     string  `json:"status"`
+	Accrual    float32 `json:"accrual"`
+	UploadedAt string  `json:"uploaded_at"`
 }
 
 type Bill struct {
