@@ -23,7 +23,7 @@ func (s *Server) getUserID(c echo.Context) (int, error) {
 	return userID, nil
 }
 
-func (s *Server) onRegUser(c echo.Context) error {
+func (s *Server) onRegister(c echo.Context) error {
 	var aud storage.AuthData
 
 	//get log & pass
@@ -96,6 +96,12 @@ func (s *Server) onPostOrders(c echo.Context) error {
 	order.Number = string(orderNum)
 	order.UploadedAt = time.Now().Format(time.RFC3339)
 	order.UserID = userID
+
+	//send order to accrual system
+	order, err = s.checkOrder(order)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
 
 	//create order
 	err = s.storage.CreateOrder(c.Request().Context(), order)

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/go-resty/resty/v2"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pkg/errors"
@@ -13,6 +14,7 @@ import (
 
 type Server struct {
 	echo    *echo.Echo
+	client  *resty.Client
 	cfg     *config.Config
 	storage storage.DataKeeper
 	logger  *logrus.Entry
@@ -35,7 +37,7 @@ func NewServer(i do.Injector) (*Server, error) {
 	s.echo.Use(middleware.Recover(), middleware.Gzip(), s.logHandler, s.CORSMiddleware)
 
 	//free routes
-	s.echo.POST(`/api/user/register`, s.onRegUser)
+	s.echo.POST(`/api/user/register`, s.onRegister)
 	s.echo.POST(`/api/user/login`, s.onLogin)
 
 	//authorized users
@@ -45,6 +47,9 @@ func NewServer(i do.Injector) (*Server, error) {
 	user.GET(`/api/user/balance`, s.onGetUserBalance)
 	user.POST(`/api/user/balance/withdraw`, s.onProcessPayment)
 	user.GET(`/api/user/withdrawals`, s.GetUserBills)
+
+	//accrual client
+	s.client = resty.New()
 
 	return s, nil
 }

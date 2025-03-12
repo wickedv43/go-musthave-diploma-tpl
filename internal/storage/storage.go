@@ -4,7 +4,6 @@ import (
 	"context"
 )
 
-// TODO: userID primary key
 type User struct {
 	AuthData
 
@@ -24,7 +23,7 @@ type UserBalance struct {
 	Withdrawn int `json:"withdrawn"`
 }
 
-// Order status | NEW | PROCESSING | INVALID | PROCESSED
+// Order status | REGISTERED | PROCESSING | INVALID | PROCESSED
 type Order struct {
 	UserID     int    `json:"-"`
 	Number     string `json:"number"`
@@ -39,7 +38,6 @@ type Bill struct {
 	ProcessedAt string `json:"processed_at"`
 }
 
-// TODO: postgres sqlc or gorm?
 type DataKeeper interface {
 	//user
 	RegisterUser(context.Context, AuthData) (User, error)
@@ -48,6 +46,8 @@ type DataKeeper interface {
 
 	//order
 	CreateOrder(context.Context, Order) error
+	//UpdateOrder(context.Context, Order) error
+	//ProcessingOrders(context.Context) ([]Order, error)
 
 	//payment
 	ProcessPayment(context.Context, Bill) error
