@@ -121,6 +121,8 @@ func (s *Server) onPostOrders(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
+	//math operations with accrual balance
+
 	return c.JSON(http.StatusAccepted, nil)
 }
 
@@ -136,6 +138,7 @@ func (s *Server) onGetOrders(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "Server error")
 	}
+
 	//if user haven't orders
 	if len(user.Orders) == 0 {
 		return c.JSON(http.StatusNoContent, "No content")
