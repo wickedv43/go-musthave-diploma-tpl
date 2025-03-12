@@ -14,6 +14,7 @@ func (s *Server) checkOrder(order storage.Order) (storage.Order, error) {
 		return order, err
 	}
 
+	s.logger.Info("[ACCRUAL URL]", url)
 	s.logger.Info("[ACCRUAL RESPONSE]", resp.String())
 
 	return order, nil
