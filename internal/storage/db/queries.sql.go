@@ -50,7 +50,7 @@ type CreateOrderParams struct {
 	UserID     int32
 	Status     string
 	Accrual    int32
-	UploadedAt string
+	UploadedAt time.Time
 }
 
 func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order, error) {
@@ -287,19 +287,21 @@ func (q *Queries) GetUserByLogin(ctx context.Context, login string) (User, error
 	return i, err
 }
 
-const updateOrderStatus = `-- name: UpdateOrderStatus :exec
+const updateOrder = `-- name: UpdateOrder :exec
 UPDATE orders
-SET status = $2
+SET status = $2,
+    accrual = $3
 WHERE number = $1
 `
 
-type UpdateOrderStatusParams struct {
-	Number string
-	Status string
+type UpdateOrderParams struct {
+	Number  string
+	Status  string
+	Accrual int32
 }
 
-func (q *Queries) UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusParams) error {
-	_, err := q.db.ExecContext(ctx, updateOrderStatus, arg.Number, arg.Status)
+func (q *Queries) UpdateOrder(ctx context.Context, arg UpdateOrderParams) error {
+	_, err := q.db.ExecContext(ctx, updateOrder, arg.Number, arg.Status, arg.Accrual)
 	return err
 }
 

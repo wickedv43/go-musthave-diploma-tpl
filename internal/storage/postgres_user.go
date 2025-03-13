@@ -3,13 +3,14 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/wickedv43/go-musthave-diploma-tpl/internal/entities"
 	"github.com/wickedv43/go-musthave-diploma-tpl/internal/storage/db"
 )
 
-func (s *PostgresStorage) RegisterUser(ctx context.Context, au AuthData) (User, error) {
+func (s *PostgresStorage) CreateUser(ctx context.Context, au AuthData) (User, error) {
 	user, err := s.Queries.CreateUser(ctx, db.CreateUserParams{
 		Login:            au.Login,
 		Password:         au.Password,
@@ -66,7 +67,7 @@ func (s *PostgresStorage) LoginUser(ctx context.Context, au AuthData) (User, err
 	}, nil
 }
 
-func (s *PostgresStorage) UserData(ctx context.Context, id int) (User, error) {
+func (s *PostgresStorage) GetUser(ctx context.Context, id int) (User, error) {
 	//get user
 	user, err := s.Queries.GetUserByID(ctx, int32(id))
 	if err != nil {
@@ -96,7 +97,7 @@ func (s *PostgresStorage) UserData(ctx context.Context, id int) (User, error) {
 		bills = append(bills, Bill{
 			Order:       bill.OrderNumber,
 			Sum:         float32(bill.Sum),
-			ProcessedAt: bill.ProcessedAt,
+			ProcessedAt: bill.ProcessedAt.Format(time.RFC3339),
 		})
 	}
 
@@ -116,7 +117,7 @@ func (s *PostgresStorage) UserData(ctx context.Context, id int) (User, error) {
 			Number:     order.Number,
 			Status:     order.Status,
 			Accrual:    float32(order.Accrual) / 100,
-			UploadedAt: order.UploadedAt,
+			UploadedAt: order.UploadedAt.Format(time.RFC3339),
 		})
 	}
 
@@ -133,4 +134,16 @@ func (s *PostgresStorage) UserData(ctx context.Context, id int) (User, error) {
 		Orders: orders,
 		Bills:  bills,
 	}, nil
+}
+
+func (s *PostgresStorage) UpdateUserBalance(ctx context.Context, user User) error {
+	err := s.Queries.UpdateUserBalance(ctx, db.UpdateUserBalanceParams{
+		ID:               int32(user.ID),
+		BalanceCurrent:   int32(user.Balance.Current * 100),
+		BalanceWithdrawn: int32(user.Balance.Withdrawn * 100),
+	})
+	if err != nil {
+		return errors.Wrap(err, "update user balance")
+	}
+	return nil
 }

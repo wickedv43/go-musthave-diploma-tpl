@@ -30,9 +30,10 @@ INSERT INTO bills (order_number, user_id, sum, processed_at)
 VALUES ($1, $2, $3, $4)
     RETURNING id, order_number, user_id, sum, processed_at;
 
--- name: UpdateOrderStatus :exec
+-- name: UpdateOrder :exec
 UPDATE orders
-SET status = $2
+SET status = $2,
+    accrual = $3
 WHERE number = $1;
 
 -- name: GetOrderByNumber :one

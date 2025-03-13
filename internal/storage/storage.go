@@ -40,12 +40,14 @@ type Bill struct {
 
 type DataKeeper interface {
 	//user
-	RegisterUser(context.Context, AuthData) (User, error)
+	CreateUser(context.Context, AuthData) (User, error)
+	GetUser(context.Context, int) (User, error)
+	UpdateUserBalance(context.Context, User) error
 	LoginUser(context.Context, AuthData) (User, error)
-	UserData(context.Context, int) (User, error)
 
 	//order
 	CreateOrder(context.Context, Order) error
+	UpdateOrder(context.Context, Order) error
 
 	//withdraw
 

@@ -32,7 +32,7 @@ func (s *Server) onRegister(c echo.Context) error {
 	}
 
 	//reg user
-	user, err := s.storage.RegisterUser(c.Request().Context(), aud)
+	user, err := s.storage.CreateUser(c.Request().Context(), aud)
 	if err != nil {
 		s.logger.WithField("user", aud.Login).Error(err)
 		if errors.Is(err, entities.ErrConflict) {
@@ -81,8 +81,6 @@ func (s *Server) onPostOrders(c echo.Context) error {
 	}
 
 	//validate orderNum
-	var order storage.Order
-
 	if !util.LuhnCheck(string(orderNum)) {
 		return c.JSON(http.StatusUnprocessableEntity, "Unprocessable Entity")
 	}
@@ -93,17 +91,16 @@ func (s *Server) onPostOrders(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, "get user ID")
 	}
 
-	order.UserID = userID
-	order.Number = string(orderNum)
-	order.UploadedAt = time.Now().Format(time.RFC3339)
-
+	order := storage.Order{
+		UserID:     userID,
+		Number:     string(orderNum),
+		UploadedAt: time.Now().Format(time.RFC3339),
+	}
 	//send order to accrual system
-	s.logger.Info("[BEFORE]", order)
 	order, err = s.checkOrder(order)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-	s.logger.Info("[AFTER]", order)
 
 	//create order
 	err = s.storage.CreateOrder(c.Request().Context(), order)
@@ -121,7 +118,15 @@ func (s *Server) onPostOrders(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	//math operations with accrual balance
+	if order.Status == "PROCESSED" {
+		var u storage.User
+		u, err = s.storage.GetUser(c.Request().Context(), userID)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err.Error())
+		}
+
+		u.Balance.Current += order.Accrual
+	}
 
 	return c.JSON(http.StatusAccepted, nil)
 }
@@ -134,7 +139,7 @@ func (s *Server) onGetOrders(c echo.Context) error {
 	}
 
 	//get user from postgres
-	user, err := s.storage.UserData(c.Request().Context(), userID)
+	user, err := s.storage.GetUser(c.Request().Context(), userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "Server error")
 	}
@@ -155,7 +160,7 @@ func (s *Server) onGetUserBalance(c echo.Context) error {
 	}
 
 	//get user from postgres
-	user, err := s.storage.UserData(c.Request().Context(), userID)
+	user, err := s.storage.GetUser(c.Request().Context(), userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "Server error")
 	}
@@ -163,6 +168,7 @@ func (s *Server) onGetUserBalance(c echo.Context) error {
 	return c.JSON(http.StatusOK, user.Balance)
 }
 
+// TODO: write this
 func (s *Server) onProcessPayment(c echo.Context) error {
 	return c.JSON(http.StatusBadRequest, "Bad request")
 }
@@ -174,7 +180,7 @@ func (s *Server) GetUserBills(c echo.Context) error {
 	}
 
 	//get user
-	user, err := s.storage.UserData(c.Request().Context(), userID)
+	user, err := s.storage.GetUser(c.Request().Context(), userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "Server error")
 	}
