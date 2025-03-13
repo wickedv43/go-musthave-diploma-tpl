@@ -94,6 +94,8 @@ func (s *Server) onPostOrders(c echo.Context) error {
 	order := storage.Order{
 		UserID:     userID,
 		Number:     string(orderNum),
+		Status:     "",
+		Accrual:    0,
 		UploadedAt: time.Now().Format(time.RFC3339),
 	}
 	//send order to accrual system

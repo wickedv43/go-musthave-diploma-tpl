@@ -24,7 +24,7 @@ func (s *PostgresStorage) CreateOrder(ctx context.Context, order Order) error {
 	if err != nil {
 		//TODO: order number errors?
 		//if same number by user
-
+		s.log.Infoln("failed to create order: ", err)
 		//if same number by another user
 
 		return errors.Wrap(err, "create order")
