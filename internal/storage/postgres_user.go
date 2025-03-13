@@ -30,8 +30,8 @@ func (s *PostgresStorage) RegisterUser(ctx context.Context, au AuthData) (User, 
 		},
 		ID: int(user.ID),
 		Balance: UserBalance{
-			Current:   int(user.BalanceCurrent),
-			Withdrawn: int(user.BalanceWithdrawn),
+			Current:   float32(user.BalanceCurrent) / 100,
+			Withdrawn: float32(user.BalanceWithdrawn) / 100,
 		},
 	}, nil
 }
@@ -60,8 +60,8 @@ func (s *PostgresStorage) LoginUser(ctx context.Context, au AuthData) (User, err
 		},
 		ID: int(user.ID),
 		Balance: UserBalance{
-			Current:   int(user.BalanceCurrent),
-			Withdrawn: int(user.BalanceWithdrawn),
+			Current:   float32(user.BalanceCurrent) / 100,
+			Withdrawn: float32(user.BalanceWithdrawn) / 100,
 		},
 	}, nil
 }
@@ -95,7 +95,7 @@ func (s *PostgresStorage) UserData(ctx context.Context, id int) (User, error) {
 	for _, bill := range uBillsPG {
 		bills = append(bills, Bill{
 			Order:       bill.OrderNumber,
-			Sum:         int(bill.Sum),
+			Sum:         float32(bill.Sum),
 			ProcessedAt: bill.ProcessedAt,
 		})
 	}
@@ -115,7 +115,7 @@ func (s *PostgresStorage) UserData(ctx context.Context, id int) (User, error) {
 		orders = append(orders, Order{
 			Number:     order.Number,
 			Status:     order.Status,
-			Accrual:    int(order.Accrual),
+			Accrual:    float32(order.Accrual) / 100,
 			UploadedAt: order.UploadedAt,
 		})
 	}
@@ -127,8 +127,8 @@ func (s *PostgresStorage) UserData(ctx context.Context, id int) (User, error) {
 		},
 		ID: int(user.ID),
 		Balance: UserBalance{
-			Current:   int(user.BalanceCurrent),
-			Withdrawn: int(user.BalanceWithdrawn),
+			Current:   float32(user.BalanceCurrent) / 100,
+			Withdrawn: float32(user.BalanceWithdrawn) / 100,
 		},
 		Orders: orders,
 		Bills:  bills,

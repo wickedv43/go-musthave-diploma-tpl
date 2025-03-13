@@ -12,7 +12,7 @@ func (s *PostgresStorage) CreateOrder(ctx context.Context, order Order) error {
 		Number:     order.Number,
 		UserID:     int32(order.UserID),
 		Status:     order.Status,
-		Accrual:    int32(order.Accrual),
+		Accrual:    int32(order.Accrual * 100),
 		UploadedAt: order.UploadedAt,
 	})
 	if err != nil {

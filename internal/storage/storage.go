@@ -19,8 +19,8 @@ type AuthData struct {
 }
 
 type UserBalance struct {
-	Current   int `json:"current"`
-	Withdrawn int `json:"withdrawn"`
+	Current   float32 `json:"current"`
+	Withdrawn float32 `json:"withdrawn"`
 }
 
 // Order status | REGISTERED | PROCESSING | INVALID | PROCESSED
@@ -33,9 +33,9 @@ type Order struct {
 }
 
 type Bill struct {
-	Order       string `json:"order"`
-	Sum         int    `json:"sum"`
-	ProcessedAt string `json:"processed_at"`
+	Order       string  `json:"order"`
+	Sum         float32 `json:"sum"`
+	ProcessedAt string  `json:"processed_at"`
 }
 
 type DataKeeper interface {
@@ -46,11 +46,8 @@ type DataKeeper interface {
 
 	//order
 	CreateOrder(context.Context, Order) error
-	//UpdateOrder(context.Context, Order) error
-	//ProcessingOrders(context.Context) ([]Order, error)
 
-	//payment
-	ProcessPayment(context.Context, Bill) error
+	//withdraw
 
 	//di
 	HealthCheck() error

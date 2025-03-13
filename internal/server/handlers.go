@@ -164,29 +164,7 @@ func (s *Server) onGetUserBalance(c echo.Context) error {
 }
 
 func (s *Server) onProcessPayment(c echo.Context) error {
-	var pr storage.Bill
-
-	//parse req
-	if err := c.Bind(&pr); err != nil {
-		return c.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	//process payment
-	err := s.storage.ProcessPayment(c.Request().Context(), pr)
-	if err != nil {
-		//if bad order num
-		if errors.Is(err, entities.ErrBadOrder) {
-			return c.JSON(http.StatusUnprocessableEntity, err.Error())
-		}
-		//if user have not money
-		if errors.Is(err, entities.ErrHaveEnoughMoney) {
-			return c.JSON(http.StatusPaymentRequired, err.Error())
-		}
-
-		return c.JSON(http.StatusInternalServerError, err.Error())
-	}
-
-	return c.JSON(http.StatusOK, nil)
+	return c.JSON(http.StatusBadRequest, "Bad request")
 }
 
 func (s *Server) GetUserBills(c echo.Context) error {
