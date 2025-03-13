@@ -13,7 +13,7 @@ import (
 )
 
 func (s *Server) getUserID(c echo.Context) (int, error) {
-	uid := c.Get("UserID")
+	uid := c.Get("userID")
 
 	userID, ok := uid.(int)
 	if !ok {
@@ -23,7 +23,7 @@ func (s *Server) getUserID(c echo.Context) (int, error) {
 	return userID, nil
 }
 
-func (s *Server) onRegUser(c echo.Context) error {
+func (s *Server) onRegister(c echo.Context) error {
 	var aud storage.AuthData
 
 	//get log & pass
@@ -32,8 +32,9 @@ func (s *Server) onRegUser(c echo.Context) error {
 	}
 
 	//reg user
-	user, err := s.storage.RegisterUser(c.Request().Context(), aud)
+	user, err := s.storage.CreateUser(c.Request().Context(), aud)
 	if err != nil {
+		s.logger.WithField("user", aud.Login).Error(err)
 		if errors.Is(err, entities.ErrConflict) {
 			return c.JSON(http.StatusConflict, "login already exists")
 		}
@@ -76,18 +77,32 @@ func (s *Server) onPostOrders(c echo.Context) error {
 
 	orderNum, err := io.ReadAll(body)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, "Server error")
+		return c.JSON(http.StatusInternalServerError, "read order number")
 	}
 
 	//validate orderNum
-	var order storage.Order
-
 	if !util.LuhnCheck(string(orderNum)) {
 		return c.JSON(http.StatusUnprocessableEntity, "Unprocessable Entity")
 	}
 
-	order.Number = string(orderNum)
-	order.UploadedAt = time.Now().Format(time.RFC3339)
+	//get userID from cookie
+	userID, err := s.getUserID(c)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, "get user ID")
+	}
+
+	order := storage.Order{
+		UserID:     userID,
+		Number:     string(orderNum),
+		Status:     "",
+		Accrual:    0,
+		UploadedAt: time.Now().Format(time.RFC3339),
+	}
+	//send order to accrual system
+	order, err = s.checkOrder(order)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
 
 	//create order
 	err = s.storage.CreateOrder(c.Request().Context(), order)
@@ -96,13 +111,27 @@ func (s *Server) onPostOrders(c echo.Context) error {
 		if errors.Is(err, entities.ErrConflict) {
 			return c.JSON(http.StatusConflict, "order already loaded by another user")
 		}
-
 		//if user already have this order num
 		if errors.Is(err, entities.ErrAlreadyExists) {
 			return c.JSON(http.StatusOK, "order already exists")
 		}
 		//another problem
-		return c.JSON(http.StatusInternalServerError, "Server error")
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	if order.Status == "PROCESSED" {
+		var u storage.User
+		u, err = s.storage.GetUser(c.Request().Context(), userID)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err.Error())
+		}
+
+		u.Balance.Current += order.Accrual
+
+		err = s.storage.UpdateUserBalance(c.Request().Context(), u)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err.Error())
+		}
 	}
 
 	return c.JSON(http.StatusAccepted, nil)
@@ -116,10 +145,11 @@ func (s *Server) onGetOrders(c echo.Context) error {
 	}
 
 	//get user from postgres
-	user, err := s.storage.UserData(c.Request().Context(), userID)
+	user, err := s.storage.GetUser(c.Request().Context(), userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "Server error")
 	}
+
 	//if user haven't orders
 	if len(user.Orders) == 0 {
 		return c.JSON(http.StatusNoContent, "No content")
@@ -136,7 +166,7 @@ func (s *Server) onGetUserBalance(c echo.Context) error {
 	}
 
 	//get user from postgres
-	user, err := s.storage.UserData(c.Request().Context(), userID)
+	user, err := s.storage.GetUser(c.Request().Context(), userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "Server error")
 	}
@@ -144,27 +174,50 @@ func (s *Server) onGetUserBalance(c echo.Context) error {
 	return c.JSON(http.StatusOK, user.Balance)
 }
 
-func (s *Server) onProcessPayment(c echo.Context) error {
-	var pr storage.Bill
-
+// TODO: write this
+func (s *Server) onWithDraw(c echo.Context) error {
 	//parse req
-	if err := c.Bind(&pr); err != nil {
+	var bill storage.Bill
+
+	err := c.Bind(&bill)
+	if err != nil {
 		return c.JSON(http.StatusBadRequest, "Bad Request")
 	}
 
-	//process payment
-	err := s.storage.ProcessPayment(c.Request().Context(), pr)
+	//get userID
+	userID, err := s.getUserID(c)
 	if err != nil {
-		//if bad order num
-		if errors.Is(err, entities.ErrBadOrder) {
-			return c.JSON(http.StatusUnprocessableEntity, "order already loaded")
-		}
-		//if user have not money
-		if errors.Is(err, entities.ErrHaveEnoughMoney) {
-			return c.JSON(http.StatusPaymentRequired, "user have enough money")
-		}
-
 		return c.JSON(http.StatusInternalServerError, "Server error")
+	}
+	bill.UserID = userID
+
+	//check withdraw num
+	if !util.LuhnCheck(bill.Order) {
+		return c.JSON(http.StatusUnprocessableEntity, "Order doesn't exist")
+	}
+
+	//check user
+	user, err := s.storage.GetUser(c.Request().Context(), userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, "Server error")
+	}
+
+	if user.Balance.Current < bill.Sum {
+		return c.JSON(http.StatusPaymentRequired, "Not enough balance")
+	}
+	//create bill
+	err = s.storage.CreateBill(c.Request().Context(), bill)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	//withdraw
+	user.Balance.Current -= bill.Sum
+	user.Balance.Withdrawn += bill.Sum
+
+	err = s.storage.UpdateUserBalance(c.Request().Context(), user)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusOK, nil)
@@ -177,7 +230,7 @@ func (s *Server) GetUserBills(c echo.Context) error {
 	}
 
 	//get user
-	user, err := s.storage.UserData(c.Request().Context(), userID)
+	user, err := s.storage.GetUser(c.Request().Context(), userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "Server error")
 	}
