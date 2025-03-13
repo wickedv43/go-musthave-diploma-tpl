@@ -111,7 +111,6 @@ func (s *Server) onPostOrders(c echo.Context) error {
 		if errors.Is(err, entities.ErrConflict) {
 			return c.JSON(http.StatusConflict, "order already loaded by another user")
 		}
-
 		//if user already have this order num
 		if errors.Is(err, entities.ErrAlreadyExists) {
 			return c.JSON(http.StatusOK, "order already exists")
@@ -128,6 +127,11 @@ func (s *Server) onPostOrders(c echo.Context) error {
 		}
 
 		u.Balance.Current += order.Accrual
+
+		err = s.storage.UpdateUserBalance(c.Request().Context(), u)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err.Error())
+		}
 	}
 
 	return c.JSON(http.StatusAccepted, nil)

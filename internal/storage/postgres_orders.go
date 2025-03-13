@@ -30,6 +30,7 @@ func (s *PostgresStorage) CreateOrder(ctx context.Context, order Order) error {
 		return errors.Wrap(err, "create order")
 	}
 
+	s.log.Infoln("[NEW ORDER] ", order.Number, order.Status, order.Accrual, order.UploadedAt)
 	return nil
 }
 
