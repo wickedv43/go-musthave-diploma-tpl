@@ -175,8 +175,52 @@ func (s *Server) onGetUserBalance(c echo.Context) error {
 }
 
 // TODO: write this
-func (s *Server) onProcessPayment(c echo.Context) error {
-	return c.JSON(http.StatusBadRequest, "Bad request")
+func (s *Server) onWithDraw(c echo.Context) error {
+	//parse req
+	var bill storage.Bill
+
+	err := c.Bind(&bill)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, "Bad Request")
+	}
+
+	//get userID
+	userID, err := s.getUserID(c)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, "Server error")
+	}
+	bill.UserID = userID
+
+	//check withdraw num
+	if !util.LuhnCheck(bill.Order) {
+		return c.JSON(http.StatusUnprocessableEntity, "Order doesn't exist")
+	}
+
+	//check user
+	user, err := s.storage.GetUser(c.Request().Context(), userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, "Server error")
+	}
+
+	if user.Balance.Current < bill.Sum {
+		return c.JSON(http.StatusPaymentRequired, "Not enough balance")
+	}
+	//create bill
+	err = s.storage.CreateBill(c.Request().Context(), bill)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	//withdraw
+	user.Balance.Current -= bill.Sum
+	user.Balance.Withdrawn += bill.Sum
+
+	err = s.storage.UpdateUserBalance(c.Request().Context(), user)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, nil)
 }
 
 func (s *Server) GetUserBills(c echo.Context) error {

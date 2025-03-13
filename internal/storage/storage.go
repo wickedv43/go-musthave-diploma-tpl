@@ -35,7 +35,8 @@ type Order struct {
 type Bill struct {
 	Order       string  `json:"order"`
 	Sum         float32 `json:"sum"`
-	ProcessedAt string  `json:"processed_at"`
+	UserID      int     `json:"-"`
+	ProcessedAt string  `json:"-"`
 }
 
 type DataKeeper interface {
@@ -50,6 +51,7 @@ type DataKeeper interface {
 	UpdateOrder(context.Context, Order) error
 
 	//withdraw
+	CreateBill(context.Context, Bill) error
 
 	//di
 	HealthCheck() error

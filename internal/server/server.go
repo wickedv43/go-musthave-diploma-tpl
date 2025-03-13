@@ -45,7 +45,7 @@ func NewServer(i do.Injector) (*Server, error) {
 	user.POST(`/api/user/orders`, s.onPostOrders)
 	user.GET(`/api/user/orders`, s.onGetOrders)
 	user.GET(`/api/user/balance`, s.onGetUserBalance)
-	user.POST(`/api/user/balance/withdraw`, s.onProcessPayment)
+	user.POST(`/api/user/balance/withdraw`, s.onWithDraw)
 	user.GET(`/api/user/withdrawals`, s.GetUserBills)
 
 	//accrual client
