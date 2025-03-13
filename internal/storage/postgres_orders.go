@@ -10,6 +10,9 @@ import (
 
 func (s *PostgresStorage) CreateOrder(ctx context.Context, order Order) error {
 	t, err := time.Parse(time.RFC3339, order.UploadedAt)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse uploaded at")
+	}
 
 	_, err = s.Queries.CreateOrder(ctx, db.CreateOrderParams{
 		Number:     order.Number,
