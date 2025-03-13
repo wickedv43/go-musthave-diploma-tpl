@@ -10,6 +10,9 @@ import (
 
 func (s *PostgresStorage) CreateBill(ctx context.Context, b Bill) error {
 	t, err := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	if err != nil {
+		return errors.Wrap(err, "failed to parse time string")
+	}
 
 	_, err = s.Queries.CreateBill(ctx, db.CreateBillParams{
 		OrderNumber: b.Order,
