@@ -36,7 +36,7 @@ type Bill struct {
 	Order       string  `json:"order"`
 	Sum         float32 `json:"sum"`
 	UserID      int     `json:"-"`
-	ProcessedAt string  `json:"-"`
+	ProcessedAt string  `json:"processed_at"`
 }
 
 type DataKeeper interface {

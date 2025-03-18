@@ -182,6 +182,7 @@ func (s *Server) onWithDraw(c echo.Context) error {
 	//get userID
 	userID, err := s.getUserID(c)
 	if err != nil {
+		s.logger.WithError(err).Error("failed to get the user from cookie")
 		return c.JSON(http.StatusInternalServerError, "Server error")
 	}
 	bill.UserID = userID
@@ -194,6 +195,7 @@ func (s *Server) onWithDraw(c echo.Context) error {
 	//check user
 	user, err := s.storage.GetUser(c.Request().Context(), userID)
 	if err != nil {
+		s.logger.WithError(err).Error("failed to get user from storage")
 		return c.JSON(http.StatusInternalServerError, "Server error")
 	}
 
@@ -203,6 +205,7 @@ func (s *Server) onWithDraw(c echo.Context) error {
 	//create bill
 	err = s.storage.CreateBill(c.Request().Context(), bill)
 	if err != nil {
+		s.logger.WithError(err).Error("Failed to create bill")
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
@@ -212,6 +215,7 @@ func (s *Server) onWithDraw(c echo.Context) error {
 
 	err = s.storage.UpdateUserBalance(c.Request().Context(), user)
 	if err != nil {
+		s.logger.WithError(err).Error("Failed to update user balance")
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
