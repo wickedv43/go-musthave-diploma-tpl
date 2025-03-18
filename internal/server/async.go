@@ -70,7 +70,7 @@ func (s *Server) fanIn(chs ...chan storage.Order) chan storage.Order {
 }
 
 func (s *Server) watch(ctx context.Context) {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 
 	go func() {
 		defer ticker.Stop()
@@ -102,9 +102,9 @@ func (s *Server) watch(ctx context.Context) {
 					err = s.storage.UpdateOrder(ctx, order)
 					if err != nil {
 						s.logger.Errorln("Failed to update order:", order.Number, err)
-					} else {
-						s.logger.Infoln("Order updated:", order.Number)
 					}
+
+					s.logger.Infoln("Order updated:", order.Number)
 
 					if order.Status == "PROCESSED" {
 						s.logger.Infoln("Order processed:", order.Number)
