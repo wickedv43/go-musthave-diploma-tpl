@@ -16,7 +16,7 @@ func (s *PostgresStorage) CreateUser(ctx context.Context, au AuthData) (User, er
 	user, err := s.Queries.CreateUser(ctx, db.CreateUserParams{
 		Login:            au.Login,
 		Password:         au.Password,
-		BalanceCurrent:   400,
+		BalanceCurrent:   0,
 		BalanceWithdrawn: 0,
 	})
 	if err != nil {

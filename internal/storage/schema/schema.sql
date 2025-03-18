@@ -24,6 +24,4 @@ CREATE TABLE "bills" (
 
 ALTER TABLE "orders" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 
-ALTER TABLE "bills" ADD FOREIGN KEY ("order_number") REFERENCES "orders" ("number");
-
 ALTER TABLE "bills" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
