@@ -91,6 +91,7 @@ func (s *PostgresStorage) ProcessingOrders(ctx context.Context) ([]Order, error)
 
 	for _, order := range ordersPG {
 		orders = append(orders, Order{
+			UserID:     int(order.UserID),
 			Number:     order.Number,
 			Status:     order.Status,
 			Accrual:    float32(order.Accrual) / 100,
