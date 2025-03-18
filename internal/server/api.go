@@ -15,8 +15,6 @@ func (s *Server) checkOrder(order storage.Order) (storage.Order, error) {
 	if err != nil {
 		return order, errors.Wrapf(err, "failed to check order %s", order.Number)
 	}
-	s.logger.Info("[ACCRUAL REQUEST] ", url)
-	s.logger.Info("[ACCRUAL RESPONSE] ", resp.Status())
 
 	var acOrder *storage.Order
 

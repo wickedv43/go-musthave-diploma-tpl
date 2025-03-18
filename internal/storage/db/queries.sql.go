@@ -249,6 +249,41 @@ func (q *Queries) GetOrdersByUserID(ctx context.Context, userID int32) ([]Order,
 	return items, nil
 }
 
+const getProcessingOrders = `-- name: GetProcessingOrders :many
+SELECT number, user_id, status, accrual, uploaded_at
+FROM orders
+WHERE status IN ('PROCESSING', 'NEW')
+`
+
+func (q *Queries) GetProcessingOrders(ctx context.Context) ([]Order, error) {
+	rows, err := q.db.QueryContext(ctx, getProcessingOrders)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Order
+	for rows.Next() {
+		var i Order
+		if err := rows.Scan(
+			&i.Number,
+			&i.UserID,
+			&i.Status,
+			&i.Accrual,
+			&i.UploadedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserByID = `-- name: GetUserByID :one
 SELECT id, login, password, balance_current, balance_withdrawn
 FROM users

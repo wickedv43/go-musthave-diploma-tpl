@@ -25,6 +25,12 @@ SELECT number, user_id, status, accrual, uploaded_at
 FROM orders
 WHERE user_id = $1;
 
+-- name: GetProcessingOrders :many
+SELECT number, user_id, status, accrual, uploaded_at
+FROM orders
+WHERE status IN ('PROCESSING', 'NEW');
+
+
 -- name: CreateBill :one
 INSERT INTO bills (order_number, user_id, sum, processed_at)
 VALUES ($1, $2, $3, $4)

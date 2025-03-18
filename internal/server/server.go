@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -18,6 +20,9 @@ type Server struct {
 	cfg     *config.Config
 	storage storage.DataKeeper
 	logger  *logrus.Entry
+
+	rootCtx   context.Context
+	cancelCtx func()
 }
 
 func NewServer(i do.Injector) (*Server, error) {
@@ -30,6 +35,8 @@ func NewServer(i do.Injector) (*Server, error) {
 	s.echo = echo.New()
 	s.cfg = do.MustInvoke[*config.Config](i)
 	s.logger = do.MustInvoke[*logger.Logger](i).WithField("component", "server")
+	//ctx
+	s.rootCtx, s.cancelCtx = context.WithCancel(context.Background())
 
 	s.storage = do.MustInvoke[*storage.PostgresStorage](i)
 
@@ -56,8 +63,8 @@ func NewServer(i do.Injector) (*Server, error) {
 
 func (s *Server) Start() {
 	s.logger.Info("server started...")
-	err := s.echo.Start(s.cfg.Server.RunAddress)
-	if err != nil {
-		s.logger.Fatal(errors.Wrap(err, "start server"))
-	}
+	go s.echo.Start(s.cfg.Server.RunAddress)
+
+	//watch orders
+	s.watch(s.rootCtx)
 }

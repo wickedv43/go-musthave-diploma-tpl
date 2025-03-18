@@ -49,6 +49,7 @@ type DataKeeper interface {
 	//order
 	CreateOrder(context.Context, Order) error
 	UpdateOrder(context.Context, Order) error
+	ProcessingOrders(ctx context.Context) ([]Order, error)
 
 	//withdraw
 	CreateBill(context.Context, Bill) error

@@ -98,11 +98,6 @@ func (s *Server) onPostOrders(c echo.Context) error {
 		Accrual:    0,
 		UploadedAt: time.Now().Format(time.RFC3339),
 	}
-	//send order to accrual system
-	//order, err = s.checkOrder(order)
-	//if err != nil {
-	//	return c.JSON(http.StatusInternalServerError, err.Error())
-	//}
 
 	//create order
 	err = s.storage.CreateOrder(c.Request().Context(), order)
@@ -233,6 +228,10 @@ func (s *Server) GetUserBills(c echo.Context) error {
 	user, err := s.storage.GetUser(c.Request().Context(), userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, "Server error")
+	}
+
+	if len(user.Bills) == 0 {
+		return c.JSON(http.StatusNoContent, "no content")
 	}
 
 	return c.JSON(http.StatusOK, user.Bills)
