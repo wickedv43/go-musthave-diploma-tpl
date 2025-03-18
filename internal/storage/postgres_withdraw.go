@@ -9,9 +9,9 @@ import (
 )
 
 func (s *PostgresStorage) CreateBill(ctx context.Context, b Bill) error {
-	t, err := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+	t, err := time.Parse(time.RFC3339, b.ProcessedAt)
 	if err != nil {
-		return errors.Wrap(err, "failed to parse time string")
+		return errors.Wrap(err, "failed to parse uploaded at")
 	}
 
 	_, err = s.Queries.CreateBill(ctx, db.CreateBillParams{
@@ -22,6 +22,7 @@ func (s *PostgresStorage) CreateBill(ctx context.Context, b Bill) error {
 	})
 
 	if err != nil {
+		s.log.Infoln("Failed to create bill", err)
 		return errors.New("failed to create bill")
 	}
 

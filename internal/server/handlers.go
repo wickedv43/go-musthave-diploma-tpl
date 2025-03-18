@@ -186,6 +186,7 @@ func (s *Server) onWithDraw(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, "Server error")
 	}
 	bill.UserID = userID
+	bill.ProcessedAt = time.Now().Format(time.RFC3339)
 
 	//check withdraw num
 	if !util.LuhnCheck(bill.Order) {
