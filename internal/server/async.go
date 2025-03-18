@@ -28,7 +28,6 @@ func (s *Server) check(inCh chan storage.Order) chan storage.Order {
 		defer close(outCh)
 
 		for order := range inCh {
-			// Проверяем заказ через checkOrder
 			updatedOrder, err := s.checkOrder(order)
 			if err != nil {
 				s.logger.Errorln("Failed to check order:", order.Number, err)
@@ -78,11 +77,9 @@ func (s *Server) watch(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
-				s.logger.Infoln("watchTasks stopped")
+				s.logger.Infoln("watch stopped")
 				return
 			case <-ticker.C:
-				s.logger.Infoln("Fetching orders for processing...")
-
 				orders, err := s.storage.ProcessingOrders(ctx)
 				if err != nil {
 					s.logger.Errorln("Failed to fetch orders:", err)
@@ -98,7 +95,6 @@ func (s *Server) watch(ctx context.Context) {
 				finalCh := s.fanIn(checkedOrderCh)
 
 				for order := range finalCh {
-					//TODO: mb tx?
 					err = s.storage.UpdateOrder(ctx, order)
 					if err != nil {
 						s.logger.Errorln("Failed to update order:", order.Number, err)
@@ -107,30 +103,18 @@ func (s *Server) watch(ctx context.Context) {
 					s.logger.Infoln("Order updated:", order.Number)
 
 					if order.Status == "PROCESSED" {
-						s.logger.Infoln("Order processed:", order)
-
 						var user storage.User
 						user, err = s.storage.GetUser(ctx, order.UserID)
 						if err != nil {
 							s.logger.Errorln("Failed to get user:", err)
 						}
 
-						s.logger.Infoln("user balance: ", user.Balance.Current)
 						user.Balance.Current += order.Accrual
-						s.logger.Infoln("user balance +: ", user.Balance.Current)
 
 						err = s.storage.UpdateUserBalance(ctx, user)
 						if err != nil {
 							s.logger.Errorln("Failed to update user balance:", err)
 						}
-
-						user, err = s.storage.GetUser(ctx, order.UserID)
-						if err != nil {
-							s.logger.Errorln("Failed to get user:", err)
-						}
-
-						s.logger.Infoln("user balance upd: ", user.Balance.Current)
-
 					}
 				}
 			}

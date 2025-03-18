@@ -114,21 +114,6 @@ func (s *Server) onPostOrders(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	if order.Status == "PROCESSED" {
-		var u storage.User
-		u, err = s.storage.GetUser(c.Request().Context(), userID)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, err.Error())
-		}
-
-		u.Balance.Current += order.Accrual
-
-		err = s.storage.UpdateUserBalance(c.Request().Context(), u)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, err.Error())
-		}
-	}
-
 	return c.JSON(http.StatusAccepted, nil)
 }
 
@@ -169,7 +154,6 @@ func (s *Server) onGetUserBalance(c echo.Context) error {
 	return c.JSON(http.StatusOK, user.Balance)
 }
 
-// TODO: write this
 func (s *Server) onWithDraw(c echo.Context) error {
 	//parse req
 	var bill storage.Bill
