@@ -98,6 +98,7 @@ func (s *Server) watch(ctx context.Context) {
 				finalCh := s.fanIn(checkedOrderCh)
 
 				for order := range finalCh {
+					//TODO: mb tx?
 					err = s.storage.UpdateOrder(ctx, order)
 					if err != nil {
 						s.logger.Errorln("Failed to update order:", order.Number, err)
@@ -106,6 +107,19 @@ func (s *Server) watch(ctx context.Context) {
 					}
 
 					if order.Status == "PROCESSED" {
+						var user storage.User
+						user, err = s.storage.GetUser(ctx, order.UserID)
+						if err != nil {
+							s.logger.Errorln("Failed to get user:", err)
+						}
+
+						user.Balance.Current += order.Accrual
+
+						err = s.storage.UpdateUserBalance(ctx, user)
+						if err != nil {
+							s.logger.Errorln("Failed to update user balance:", err)
+						}
+
 						s.logger.Infoln("Order processed:", order.Number)
 					}
 				}
