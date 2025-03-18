@@ -107,7 +107,7 @@ func (s *Server) watch(ctx context.Context) {
 					s.logger.Infoln("Order updated:", order.Number)
 
 					if order.Status == "PROCESSED" {
-						s.logger.Infoln("Order processed:", order.Number)
+						s.logger.Infoln("Order processed:", order)
 
 						var user storage.User
 						user, err = s.storage.GetUser(ctx, order.UserID)
