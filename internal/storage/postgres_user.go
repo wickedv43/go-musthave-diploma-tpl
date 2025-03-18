@@ -3,8 +3,10 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/wickedv43/go-musthave-diploma-tpl/internal/entities"
 	"github.com/wickedv43/go-musthave-diploma-tpl/internal/storage/db"
@@ -18,9 +20,24 @@ func (s *PostgresStorage) CreateUser(ctx context.Context, au AuthData) (User, er
 		BalanceWithdrawn: 0,
 	})
 	if err != nil {
-		//if login already exist?
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) {
+			switch pqErr.Code {
+			case "23505": // unique_violation - логин уже существует
+				s.log.Warnln("User login already exists:", au.Login)
+				return User{}, entities.ErrAlreadyExists
+			default:
+				s.log.Errorln("Database error:", pqErr.Message)
+				return User{}, errors.Wrap(err, "database error")
+			}
+		}
 
-		//if another problems
+		if errors.Is(err, sql.ErrNoRows) {
+			s.log.Warnln("No rows affected")
+			return User{}, fmt.Errorf("user creation failed: no rows affected")
+		}
+
+		s.log.Errorln("Failed to create user:", err)
 		return User{}, errors.Wrap(err, "create user")
 	}
 
@@ -96,7 +113,7 @@ func (s *PostgresStorage) GetUser(ctx context.Context, id int) (User, error) {
 	for _, bill := range uBillsPG {
 		bills = append(bills, Bill{
 			Order:       bill.OrderNumber,
-			Sum:         float32(bill.Sum),
+			Sum:         float32(bill.Sum) / 100,
 			ProcessedAt: bill.ProcessedAt.Format(time.RFC3339),
 		})
 	}

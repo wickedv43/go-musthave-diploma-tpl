@@ -4,7 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/wickedv43/go-musthave-diploma-tpl/internal/entities"
 	"github.com/wickedv43/go-musthave-diploma-tpl/internal/storage/db"
 )
 
@@ -22,12 +24,26 @@ func (s *PostgresStorage) CreateOrder(ctx context.Context, order Order) error {
 		UploadedAt: t,
 	})
 	if err != nil {
-		//TODO: order number errors?
-		//if same number by user
-		s.log.Infoln("failed to create order: ", err)
-		//if same number by another user
+		if pqErr, ok := err.(*pq.Error); ok {
+			switch pqErr.Code {
+			case "23505": // unique_violation (дубликат номера заказа)
+				s.log.Infoln("Order number already exists:", order.Number)
+				var ord db.Order
 
-		return errors.Wrap(err, "create order")
+				ord, err = s.Queries.GetOrderByNumber(ctx, order.Number)
+				if err != nil {
+					return errors.Wrap(err, "failed to get order by number")
+				}
+				if order.UserID == int(ord.UserID) {
+					return entities.ErrAlreadyExists
+				}
+
+				return entities.ErrConflict
+			default:
+				s.log.Errorln("Database error:", pqErr.Message)
+				return errors.Wrap(err, "database error")
+			}
+		}
 	}
 
 	s.log.Infoln("[NEW ORDER] ", order.Number, order.Status, order.Accrual, order.UploadedAt)

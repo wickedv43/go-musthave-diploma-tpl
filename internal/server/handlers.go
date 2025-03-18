@@ -34,10 +34,10 @@ func (s *Server) onRegister(c echo.Context) error {
 	//reg user
 	user, err := s.storage.CreateUser(c.Request().Context(), aud)
 	if err != nil {
-		s.logger.WithField("user", aud.Login).Error(err)
-		if errors.Is(err, entities.ErrConflict) {
+		if errors.Is(err, entities.ErrAlreadyExists) {
 			return c.JSON(http.StatusConflict, "login already exists")
 		}
+
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
@@ -56,7 +56,7 @@ func (s *Server) onLogin(c echo.Context) error {
 	user, err := s.storage.LoginUser(c.Request().Context(), aud)
 	if err != nil {
 		if errors.Is(err, entities.ErrBadLogin) {
-			return c.JSON(http.StatusConflict, "permission denied")
+			return c.JSON(http.StatusUnauthorized, "permission denied")
 		}
 
 		return c.JSON(http.StatusInternalServerError, err)
@@ -99,10 +99,10 @@ func (s *Server) onPostOrders(c echo.Context) error {
 		UploadedAt: time.Now().Format(time.RFC3339),
 	}
 	//send order to accrual system
-	order, err = s.checkOrder(order)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
-	}
+	//order, err = s.checkOrder(order)
+	//if err != nil {
+	//	return c.JSON(http.StatusInternalServerError, err.Error())
+	//}
 
 	//create order
 	err = s.storage.CreateOrder(c.Request().Context(), order)
