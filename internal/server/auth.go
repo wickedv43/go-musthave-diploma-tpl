@@ -17,7 +17,7 @@ var (
 
 type Claims struct {
 	jwt.RegisteredClaims
-	UserID int `json:"login"`
+	UserID int `json:"user_id"`
 }
 
 func (s *Server) createJWT(u storage.User) (string, error) {

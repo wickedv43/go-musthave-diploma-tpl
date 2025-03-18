@@ -41,6 +41,8 @@ func (s *PostgresStorage) CreateUser(ctx context.Context, au AuthData) (User, er
 		return User{}, errors.Wrap(err, "create user")
 	}
 
+	s.log.Infoln("Created user:", user)
+
 	return User{
 		AuthData: AuthData{
 			Login:    user.Login,
