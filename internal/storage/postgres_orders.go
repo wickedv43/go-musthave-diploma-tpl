@@ -7,7 +7,6 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/wickedv43/go-musthave-diploma-tpl/internal/entities"
 	"github.com/wickedv43/go-musthave-diploma-tpl/internal/storage/db"
 )
@@ -48,13 +47,6 @@ func (s *PostgresStorage) CreateOrder(ctx context.Context, order Order) error {
 		}
 	}
 
-	s.log.WithFields(logrus.Fields{
-		"number":  order.Number,
-		"userID":  order.UserID,
-		"status":  order.Status,
-		"accrual": order.Accrual,
-	}).Infoln("Created order successfully")
-
 	return nil
 }
 
@@ -67,13 +59,6 @@ func (s *PostgresStorage) UpdateOrder(ctx context.Context, order Order) error {
 	if err != nil {
 		return errors.Wrap(err, "update order")
 	}
-
-	s.log.WithFields(logrus.Fields{
-		"number":  order.Number,
-		"userID":  order.UserID,
-		"status":  order.Status,
-		"accrual": order.Accrual,
-	}).Infoln("Updated order successfully")
 
 	return nil
 }

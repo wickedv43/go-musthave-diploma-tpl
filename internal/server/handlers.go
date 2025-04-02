@@ -178,29 +178,20 @@ func (s *Server) onWithDraw(c echo.Context) error {
 	}
 
 	//check user
-	user, err := s.storage.GetUser(c.Request().Context(), userID)
+	//tx start
+	err = s.storage.WithdrawFromBalance(c.Request().Context(), userID, bill.Sum)
 	if err != nil {
-		s.logger.WithError(err).Error("failed to get user from storage")
+		if errors.Is(err, entities.ErrPaymentRequired) {
+			return c.JSON(http.StatusPaymentRequired, "Not enough balance")
+		}
+
 		return c.JSON(http.StatusInternalServerError, "Server error")
 	}
-
-	if user.Balance.Current < bill.Sum {
-		return c.JSON(http.StatusPaymentRequired, "Not enough balance")
-	}
+	//tx end
 	//create bill
 	err = s.storage.CreateBill(c.Request().Context(), bill)
 	if err != nil {
 		s.logger.WithError(err).Error("Failed to create bill")
-		return c.JSON(http.StatusInternalServerError, err.Error())
-	}
-
-	//withdraw
-	user.Balance.Current -= bill.Sum
-	user.Balance.Withdrawn += bill.Sum
-
-	err = s.storage.UpdateUserBalance(c.Request().Context(), user)
-	if err != nil {
-		s.logger.WithError(err).Error("Failed to update user balance")
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 

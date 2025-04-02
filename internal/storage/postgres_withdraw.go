@@ -14,8 +14,6 @@ func (s *PostgresStorage) CreateBill(ctx context.Context, b Bill) error {
 		return errors.Wrap(err, "failed to parse uploaded at")
 	}
 
-	s.log.Infoln("Creating bill", b)
-
 	_, err = s.Queries.CreateBill(ctx, db.CreateBillParams{
 		OrderNumber: b.Order,
 		UserID:      int32(b.UserID),
@@ -24,7 +22,6 @@ func (s *PostgresStorage) CreateBill(ctx context.Context, b Bill) error {
 	})
 
 	if err != nil {
-		s.log.Infoln("Failed to create bill", err)
 		return errors.New("failed to create bill")
 	}
 

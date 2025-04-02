@@ -46,10 +46,14 @@ type DataKeeper interface {
 	UpdateUserBalance(context.Context, User) error
 	LoginUser(context.Context, AuthData) (User, error)
 
+	//tx
+	AddToBalanceWithTX(context.Context, int, float32) error
+	WithdrawFromBalance(context.Context, int, float32) error
+
 	//order
 	CreateOrder(context.Context, Order) error
 	UpdateOrder(context.Context, Order) error
-	ProcessingOrders(ctx context.Context) ([]Order, error)
+	ProcessingOrders(context.Context) ([]Order, error)
 
 	//withdraw
 	CreateBill(context.Context, Bill) error

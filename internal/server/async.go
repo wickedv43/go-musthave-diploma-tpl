@@ -28,6 +28,17 @@ func (s *Server) check(inCh chan storage.Order) chan storage.Order {
 		defer close(outCh)
 
 		for order := range inCh {
+			for {
+				pauseUntil := s.getPause()
+				if time.Now().Before(pauseUntil) {
+					sleepDur := time.Until(pauseUntil)
+					s.logger.Warnf("Paused due to 429, sleeping for %v", sleepDur)
+					time.Sleep(sleepDur)
+				} else {
+					break
+				}
+			}
+
 			updatedOrder, err := s.checkOrder(order)
 			if err != nil {
 				s.logger.Errorln("Failed to check order:", order.Number, err)
@@ -86,13 +97,14 @@ func (s *Server) watch(ctx context.Context) {
 					continue
 				}
 				if len(orders) == 0 {
-					s.logger.Infoln("No orders to process")
+
 					continue
 				}
 
 				orderCh := s.gen(orders...)
 				checkedOrderCh := s.check(orderCh)
-				finalCh := s.fanIn(checkedOrderCh)
+				checkedOrderChTwo := s.check(orderCh)
+				finalCh := s.fanIn(checkedOrderCh, checkedOrderChTwo)
 
 				for order := range finalCh {
 					err = s.storage.UpdateOrder(ctx, order)
@@ -100,18 +112,9 @@ func (s *Server) watch(ctx context.Context) {
 						s.logger.Errorln("Failed to update order:", order.Number, err)
 					}
 
-					s.logger.Infoln("Order updated:", order.Number)
-
 					if order.Status == "PROCESSED" {
-						var user storage.User
-						user, err = s.storage.GetUser(ctx, order.UserID)
-						if err != nil {
-							s.logger.Errorln("Failed to get user:", err)
-						}
-
-						user.Balance.Current += order.Accrual
-
-						err = s.storage.UpdateUserBalance(ctx, user)
+						//update user balance with tx
+						err = s.storage.AddToBalanceWithTX(ctx, order.UserID, order.Accrual)
 						if err != nil {
 							s.logger.Errorln("Failed to update user balance:", err)
 						}

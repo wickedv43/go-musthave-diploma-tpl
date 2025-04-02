@@ -23,25 +23,20 @@ func (s *PostgresStorage) CreateUser(ctx context.Context, au AuthData) (User, er
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			switch pqErr.Code {
-			case "23505": // unique_violation - логин уже существует
-				s.log.Warnln("User login already exists:", au.Login)
+			case "23505":
 				return User{}, entities.ErrAlreadyExists
 			default:
-				s.log.Errorln("Database error:", pqErr.Message)
+
 				return User{}, errors.Wrap(err, "database error")
 			}
 		}
 
 		if errors.Is(err, sql.ErrNoRows) {
-			s.log.Warnln("No rows affected")
 			return User{}, fmt.Errorf("user creation failed: no rows affected")
 		}
 
-		s.log.Errorln("Failed to create user:", err)
 		return User{}, errors.Wrap(err, "create user")
 	}
-
-	s.log.Infoln("Created user:", user)
 
 	return User{
 		AuthData: AuthData{
@@ -165,4 +160,67 @@ func (s *PostgresStorage) UpdateUserBalance(ctx context.Context, user User) erro
 		return errors.Wrap(err, "update user balance")
 	}
 	return nil
+}
+
+func (s *PostgresStorage) AddToBalanceWithTX(ctx context.Context, uID int, amount float32) error {
+	tx, err := s.Postgres.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Wrap(err, "begin tx")
+	}
+	qtx := s.Queries.WithTx(tx)
+
+	user, err := qtx.GetUserByID(ctx, int32(uID))
+	if err != nil {
+		_ = tx.Rollback()
+		return errors.Wrap(err, "get user")
+	}
+
+	user.BalanceCurrent += int32(amount * 100)
+
+	err = qtx.UpdateUserBalance(ctx, db.UpdateUserBalanceParams{
+		ID:               user.ID,
+		BalanceCurrent:   user.BalanceCurrent,
+		BalanceWithdrawn: user.BalanceWithdrawn,
+	})
+	if err != nil {
+		_ = tx.Rollback()
+		return errors.Wrap(err, "update balance")
+	}
+
+	return tx.Commit()
+}
+
+func (s *PostgresStorage) WithdrawFromBalance(ctx context.Context, uID int, amount float32) error {
+	tx, err := s.Postgres.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Wrap(err, "begin tx")
+	}
+	qtx := s.Queries.WithTx(tx)
+
+	user, err := qtx.GetUserByID(ctx, int32(uID))
+	if err != nil {
+		_ = tx.Rollback()
+		return errors.Wrap(err, "get user")
+	}
+
+	amountInCopeks := int32(amount * 100)
+	if user.BalanceCurrent < amountInCopeks {
+		_ = tx.Rollback()
+		return entities.ErrPaymentRequired
+	}
+
+	user.BalanceCurrent -= amountInCopeks
+	user.BalanceWithdrawn += amountInCopeks
+
+	err = qtx.UpdateUserBalance(ctx, db.UpdateUserBalanceParams{
+		ID:               user.ID,
+		BalanceCurrent:   user.BalanceCurrent,
+		BalanceWithdrawn: user.BalanceWithdrawn,
+	})
+	if err != nil {
+		_ = tx.Rollback()
+		return errors.Wrap(err, "update balance")
+	}
+
+	return tx.Commit()
 }

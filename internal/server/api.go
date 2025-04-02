@@ -3,6 +3,9 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/wickedv43/go-musthave-diploma-tpl/internal/storage"
@@ -16,6 +19,14 @@ func (s *Server) checkOrder(order storage.Order) (storage.Order, error) {
 		return order, errors.Wrapf(err, "failed to check order %s", order.Number)
 	}
 
+	if resp.StatusCode() == http.StatusTooManyRequests {
+		retryAfter := resp.Header().Get("Retry-After")
+		seconds, _ := strconv.Atoi(retryAfter)
+		s.setPause(time.Duration(seconds) * time.Second)
+		s.logger.Warnf("Got 429, pausing all workers for %d seconds", seconds)
+		return order, errors.New("rate limited")
+	}
+
 	var acOrder *storage.Order
 
 	err = json.Unmarshal(resp.Body(), &acOrder)
@@ -27,4 +38,16 @@ func (s *Server) checkOrder(order storage.Order) (storage.Order, error) {
 	order.Status = acOrder.Status
 
 	return order, nil
+}
+
+func (s *Server) setPause(d time.Duration) {
+	s.pauseMu.Lock()
+	defer s.pauseMu.Unlock()
+	s.pauseUntil = time.Now().Add(d)
+}
+
+func (s *Server) getPause() time.Time {
+	s.pauseMu.Lock()
+	defer s.pauseMu.Unlock()
+	return s.pauseUntil
 }

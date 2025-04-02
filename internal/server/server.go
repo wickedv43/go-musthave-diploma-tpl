@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"sync"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/labstack/echo/v4"
@@ -20,6 +22,9 @@ type Server struct {
 	cfg     *config.Config
 	storage storage.DataKeeper
 	logger  *logrus.Entry
+
+	pauseMu    sync.Mutex
+	pauseUntil time.Time
 
 	rootCtx   context.Context
 	cancelCtx func()
