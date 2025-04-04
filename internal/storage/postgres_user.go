@@ -150,18 +150,6 @@ func (s *PostgresStorage) GetUser(ctx context.Context, id int) (User, error) {
 	}, nil
 }
 
-func (s *PostgresStorage) UpdateUserBalance(ctx context.Context, user User) error {
-	err := s.Queries.UpdateUserBalance(ctx, db.UpdateUserBalanceParams{
-		ID:               int32(user.ID),
-		BalanceCurrent:   int32(user.Balance.Current * 100),
-		BalanceWithdrawn: int32(user.Balance.Withdrawn * 100),
-	})
-	if err != nil {
-		return errors.Wrap(err, "update user balance")
-	}
-	return nil
-}
-
 func (s *PostgresStorage) AddToBalanceWithTX(ctx context.Context, uID int, amount float32) error {
 	tx, err := s.Postgres.BeginTx(ctx, nil)
 	if err != nil {

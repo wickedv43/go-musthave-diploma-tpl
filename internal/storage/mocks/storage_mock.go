@@ -185,20 +185,6 @@ func (mr *MockDataKeeperMockRecorder) UpdateOrder(arg0, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOrder", reflect.TypeOf((*MockDataKeeper)(nil).UpdateOrder), arg0, arg1)
 }
 
-// UpdateUserBalance mocks base method.
-func (m *MockDataKeeper) UpdateUserBalance(arg0 context.Context, arg1 storage.User) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateUserBalance", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateUserBalance indicates an expected call of UpdateUserBalance.
-func (mr *MockDataKeeperMockRecorder) UpdateUserBalance(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserBalance", reflect.TypeOf((*MockDataKeeper)(nil).UpdateUserBalance), arg0, arg1)
-}
-
 // WithdrawFromBalance mocks base method.
 func (m *MockDataKeeper) WithdrawFromBalance(arg0 context.Context, arg1 int, arg2 float32) error {
 	m.ctrl.T.Helper()

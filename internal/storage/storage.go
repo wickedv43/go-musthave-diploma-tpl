@@ -43,7 +43,6 @@ type DataKeeper interface {
 	//user
 	CreateUser(context.Context, AuthData) (User, error)
 	GetUser(context.Context, int) (User, error)
-	UpdateUserBalance(context.Context, User) error
 	LoginUser(context.Context, AuthData) (User, error)
 
 	//tx
