@@ -43,7 +43,7 @@ func NewServer(i do.Injector) (*Server, error) {
 	//ctx
 	s.rootCtx, s.cancelCtx = context.WithCancel(context.Background())
 
-	s.storage = do.MustInvoke[*storage.PostgresStorage](i)
+	s.storage = do.MustInvoke[storage.DataKeeper](i)
 
 	//middleware
 	s.echo.Use(middleware.Recover(), middleware.Gzip(), s.logHandler, s.CORSMiddleware)

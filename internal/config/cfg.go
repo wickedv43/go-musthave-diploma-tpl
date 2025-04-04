@@ -39,7 +39,6 @@ func NewConfig(i do.Injector) (*Config, error) {
 	flag.StringVar(&cfg.Server.RunAddress, "a", ":8080", "address and port to run server")
 	flag.StringVar(&cfg.Database.URI, "d", "", "DSN")
 	flag.StringVar(&cfg.AccrualSystem.URL, "r", "", "accrual system url")
-	flag.Parse()
 
 	err := godotenv.Load()
 	if err != nil {

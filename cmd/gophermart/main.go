@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"os"
 	"syscall"
 
@@ -12,6 +13,7 @@ import (
 )
 
 func main() {
+	flag.Parse()
 	// provide part
 	i := do.New()
 
