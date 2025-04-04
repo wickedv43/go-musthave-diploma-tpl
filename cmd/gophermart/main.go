@@ -22,7 +22,9 @@ func main() {
 	do.Provide(i, logger.NewLogger)
 
 	//storage
-	do.Provide(i, storage.NewPostgresStorage)
+	do.Provide[storage.DataKeeper](i, func(i do.Injector) (storage.DataKeeper, error) {
+		return do.MustInvoke[*storage.PostgresStorage](i), nil
+	})
 
 	do.MustInvoke[*logger.Logger](i)
 	do.MustInvoke[*server.Server](i).Start()
