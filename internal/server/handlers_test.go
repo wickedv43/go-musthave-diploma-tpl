@@ -61,7 +61,7 @@ func TestOnRegister_Success(t *testing.T) {
 func TestOnLogin_Success(t *testing.T) {
 	s := setupTestServer(t, func(mock *mocks.MockDataKeeper) {
 		mock.EXPECT().
-			CreateUser(gomock.Any(), gomock.Any()).
+			LoginUser(gomock.Any(), gomock.Any()).
 			Return(storage.User{ID: 1}, nil)
 	})
 
