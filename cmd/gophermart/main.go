@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"os"
 	"syscall"
 
@@ -12,15 +13,18 @@ import (
 )
 
 func main() {
+	flag.Parse()
 	// provide part
 	i := do.New()
 
 	do.Provide(i, server.NewServer)
 	do.Provide(i, config.NewConfig)
 	do.Provide(i, logger.NewLogger)
-
-	//storage
 	do.Provide(i, storage.NewPostgresStorage)
+	//storage
+	do.Provide[storage.DataKeeper](i, func(i do.Injector) (storage.DataKeeper, error) {
+		return do.MustInvoke[*storage.PostgresStorage](i), nil
+	})
 
 	do.MustInvoke[*logger.Logger](i)
 	do.MustInvoke[*server.Server](i).Start()

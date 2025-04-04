@@ -7,6 +7,5 @@ var (
 	ErrNotFound        = errors.New("not found")
 	ErrBadLogin        = errors.New("permission denied")
 	ErrAlreadyExists   = errors.New("already exists")
-	ErrBadOrder        = errors.New("bad order")
-	ErrHaveEnoughMoney = errors.New("user have enough money to buy")
+	ErrPaymentRequired = errors.New("payment required")
 )

@@ -3,3 +3,12 @@ version: '3'
 tasks:
   run:
     go run ./cmd/gophermart/.
+  docker:
+    docker run --name my-postgres -e POSTGRES_PASSWORD=secretpassword -p 5432:5432 -d postgres
+  mocks:
+    mockgen -source=internal/storage/storage.go -destination=internal/storage/mocks/storage_mock.go -package=mocks
+
+  test:
+    cmds:
+    - go test -v -coverprofile=coverage.out ./...
+    - go tool cover -func=coverage.out

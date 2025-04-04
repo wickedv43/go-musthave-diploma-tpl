@@ -4,7 +4,6 @@ import (
 	"context"
 )
 
-// TODO: userID primary key
 type User struct {
 	AuthData
 
@@ -20,36 +19,43 @@ type AuthData struct {
 }
 
 type UserBalance struct {
-	Current   int `json:"current"`
-	Withdrawn int `json:"withdrawn"`
+	Current   float32 `json:"current"`
+	Withdrawn float32 `json:"withdrawn"`
 }
 
-// Order status | NEW | PROCESSING | INVALID | PROCESSED
+// Order status | REGISTERED | PROCESSING | INVALID | PROCESSED
 type Order struct {
-	Number     string `json:"number"`
-	Status     string `json:"status"`
-	Accrual    int    `json:"accrual"`
-	UploadedAt string `json:"uploaded_at"`
+	UserID     int     `json:"-"`
+	Number     string  `json:"number"`
+	Status     string  `json:"status"`
+	Accrual    float32 `json:"accrual"`
+	UploadedAt string  `json:"uploaded_at"`
 }
 
 type Bill struct {
-	Order       string `json:"order"`
-	Sum         int    `json:"sum"`
-	ProcessedAt string `json:"processed_at"`
+	Order       string  `json:"order"`
+	Sum         float32 `json:"sum"`
+	UserID      int     `json:"-"`
+	ProcessedAt string  `json:"processed_at"`
 }
 
-// TODO: postgres sqlc or gorm?
 type DataKeeper interface {
 	//user
-	RegisterUser(context.Context, AuthData) (User, error)
+	CreateUser(context.Context, AuthData) (User, error)
+	GetUser(context.Context, int) (User, error)
 	LoginUser(context.Context, AuthData) (User, error)
-	UserData(context.Context, int) (User, error)
+
+	//tx
+	AddToBalanceWithTX(context.Context, int, float32) error
+	WithdrawFromBalance(context.Context, int, float32) error
 
 	//order
 	CreateOrder(context.Context, Order) error
+	UpdateOrder(context.Context, Order) error
+	ProcessingOrders(context.Context) ([]Order, error)
 
-	//payment
-	ProcessPayment(context.Context, Bill) error
+	//withdraw
+	CreateBill(context.Context, Bill) error
 
 	//di
 	HealthCheck() error

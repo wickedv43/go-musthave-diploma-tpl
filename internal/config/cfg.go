@@ -23,7 +23,7 @@ type Server struct {
 }
 
 type Database struct {
-	DSN string
+	URI string
 }
 
 type AccrualSystem struct {
@@ -37,9 +37,8 @@ func NewConfig(i do.Injector) (*Config, error) {
 
 	//flags
 	flag.StringVar(&cfg.Server.RunAddress, "a", ":8080", "address and port to run server")
-	flag.StringVar(&cfg.Database.DSN, "d", "", "DSN")
+	flag.StringVar(&cfg.Database.URI, "d", "", "DSN")
 	flag.StringVar(&cfg.AccrualSystem.URL, "r", "", "accrual system url")
-	flag.Parse()
 
 	err := godotenv.Load()
 	if err != nil {
@@ -52,14 +51,14 @@ func NewConfig(i do.Injector) (*Config, error) {
 		cfg.Server.RunAddress = runAdress
 	}
 
-	DatabaseDSN := os.Getenv("DATABASE_DSN")
-	if DatabaseDSN != "" {
-		cfg.Database.DSN = DatabaseDSN
+	DatabaseURI := os.Getenv("DATABASE_URI")
+	if DatabaseURI != "" {
+		cfg.Database.URI = DatabaseURI
 	}
 
 	AccrualSystemAddress := os.Getenv("ACCRUAL_SYSTEM_ADDRESS")
 	if AccrualSystemAddress != "" {
-		cfg.Database.DSN = AccrualSystemAddress
+		cfg.AccrualSystem.URL = AccrualSystemAddress
 	}
 
 	return &cfg, nil
